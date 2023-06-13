@@ -1,88 +1,64 @@
-from __future__ import print_function
 import sys
-
-if sys.version_info[0] < 3:
-    input = raw_input
-
-try:
-    import ipaddress
-except ImportError:
-    sys.exit("This code requires the 'ipaddress' library. Please install it using 'pip install ipaddress' and try again.")
-
-
-# ANSI escape sequences for bold red text and reset
-bold_red = "\033[1;31m"  # for errors
-bold_green = "\033[1;32m"  # for successful responses
-reset = "\033[0m"
-
-# number of bits in an IPv4 address
-ip_bits_total = 32
-ip_octet = 8
+import socket
+from tabulate import tabulate
+import ipaddress
 
 
 def successful(text):
-    """an easier way to print successful responses"""
-    return "{}{}{}".format(bold_green, text, reset)
+    """An easier way to print successful responses"""
+    return f"\033[1;32m{text}\033[0m"
 
 
 def error(text):
-    """an easier way to print errors"""
-    return "{}{}{}".format(bold_red, text, reset)
+    """An easier way to print errors"""
+    return f"\033[1;31m{text}\033[0m"
 
 
 def binary_to_ip(binary_ip):
     """Convert a valid 32-bit value into an IPv4 address"""
-    binary_ip = binary_ip.replace(".", "")
-    octets = [binary_ip[i : i + ip_octet] for i in range(0, ip_bits_total, ip_octet)]
     try:
-        return successful("Decimal IP: {}".format(".".join(str(int(octet, 2)) for octet in octets)))
+        octets = [str(int(binary_ip[i:i+8], 2)) for i in range(0, 32, 8)]
+        return successful(f"Decimal IP: {'.'.join(octets)}")
     except ValueError:
-        print(error("Error: Probably an incorrect binary value."))
+        return error("Error: Probably an incorrect binary value.")
 
 
 def ip_to_binary(ip_address):
     """Convert an IPv4 address into its binary form"""
     try:
         ip = ipaddress.ip_address(ip_address)
-        binary_ip = bin(int(ip)).replace("0b", "")
+        binary_ip = "{:032b}".format(int(ip))
+        octets = [binary_ip[i:i+8] for i in range(0, 32, 8)]
+        return successful(f"Binary IP: {'.'.join(octets)}")
     except ValueError as ip_error:
-        print(error(ip_error))
-    else:
-        binary_ip = binary_ip.rjust(ip_bits_total, "0")
-        return successful(
-            "{}".format(".".join([binary_ip[i : i + ip_octet] for i in range(0, ip_bits_total, ip_octet)]))
-        )
+        return error(str(ip_error))
 
 
 def network_address(ip_address, subnet_mask):
     """Converts an IP Subnet into its CIDR notation equivalent"""
     try:
-        ip = ipaddress.IPv4Interface("{}/{}".format(ip_address, subnet_mask))
+        ip = ipaddress.IPv4Interface(f"{ip_address}/{subnet_mask}")
+        return successful(f"Network address with CIDR Notation: {ip.network}")
     except ipaddress.AddressValueError:
-        print(error("Error: Invalid subnet mask or IP address"))
-    else:
-        return str(successful("Network address with CIDR Notation: {}".format(ip.network)))
+        return error("Error: Invalid subnet mask or IP address")
 
 
 def cidr_to_subnet_mask(ip_address):
     """Converts IPAddress/CIDR into dotted-decimal-notation IPAddress/Subnet Mask"""
     try:
         network = ipaddress.IPv4Network(ip_address, strict=False)
+        return successful(f"Network address: {network.network_address}\nIP Subnet Mask: {network.netmask}")
     except ipaddress.AddressValueError:
-        print(error("Error: Invalid subnet mask or IP address"))
-    else:
-        return str(
-            successful("Network address: {}\nIP Subnet Mask: {}".format(network.network_address, network.netmask))
-        )
+        return error("Error: Invalid subnet mask or IP address")
 
 
 def possible_number_of_subnets(ip_address, subnet_mask):
     try:
-        ip = ipaddress.IPv4Network("{}/{}".format(ip_address, subnet_mask), strict=False)
+        ip = ipaddress.IPv4Network(f"{ip_address}/{subnet_mask}", strict=False)
+        return successful(f"Possible Number of Subnets: {2 ** (32 - ip.prefixlen)}")
     except ipaddress.AddressValueError:
-        print(error("Error: Invalid subnet mask or IP address"))
-    else:
-               return successful("Possible Number of Subnets: {}".format(2 ** (ip_bits_total - ip.prefixlen)))
+        return error("Error: Invalid subnet mask or IP address")
+
 
 def ip_class_by_hosts(ip_address, subnet_mask_or_cidr):
     try:
@@ -90,11 +66,9 @@ def ip_class_by_hosts(ip_address, subnet_mask_or_cidr):
         cidr = subnet_mask_or_cidr
     except ValueError:
         subnet_mask = subnet_mask_or_cidr
-        cidr = ipaddress.IPv4Network(
-            "{}/{}".format(ip_address, subnet_mask), strict=False
-        ).prefixlen
+        cidr = ipaddress.IPv4Network(f"{ip_address}/{subnet_mask}", strict=False).prefixlen
     else:
-        ip = ipaddress.IPv4Network("{}/{}".format(ip_address, cidr), strict=False)
+        ip = ipaddress.IPv4Network(f"{ip_address}/{cidr}", strict=False)
         total_hosts = ip.num_addresses
 
         if total_hosts >= 2 ** 16:
@@ -104,12 +78,13 @@ def ip_class_by_hosts(ip_address, subnet_mask_or_cidr):
         else:
             return "Class C"
 
+
 def ip_class_private_public(ip_address):
     """Is it a Private Address or Public Address? That's what this function answers"""
     try:
         ip = ipaddress.IPv4Address(ip_address)
     except ipaddress.AddressValueError:
-        print(error("Error: Invalid Address"))
+        return error("Error: Invalid Address")
     else:
         first_octet = int(str(ip).split(".")[0])
         if first_octet >= 1 and first_octet <= 126:
@@ -123,9 +98,10 @@ def ip_class_private_public(ip_address):
         else:
             ip_class = "E"
         if ip.is_private:
-            return "{}{}{}".format(successful("According to first octet: Class "), ip_class, successful(", Private"))
+            return successful(f"According to first octet: Class {ip_class}, Private")
         else:
-            return "{}{}{}".format(successful("According to first octet: Class "), ip_class, successful(", Public"))
+            return successful(f"According to first octet: Class {ip_class}, Public")
+
 
 def display_all_info(ip_address, subnet_mask_or_cidr):
     try:
@@ -133,44 +109,78 @@ def display_all_info(ip_address, subnet_mask_or_cidr):
         cidr = subnet_mask_or_cidr
     except ValueError:
         subnet_mask = subnet_mask_or_cidr
-        cidr = ipaddress.IPv4Network(
-            "{}/{}".format(ip_address, subnet_mask), strict=False
-        ).prefixlen
+        cidr = ipaddress.IPv4Network(f"{ip_address}/{subnet_mask}", strict=False).prefixlen
 
     ip_int = int(ipaddress.IPv4Address(ip_address))
     ip_hex = hex(ip_int)
 
-    network = ipaddress.IPv4Network("{}/{}".format(ip_address, cidr), strict=False)
+    network = ipaddress.IPv4Network(f"{ip_address}/{cidr}", strict=False)
     total_hosts = network.num_addresses
     usable_hosts = total_hosts - 2
     first_address, last_address = list(network.hosts())[0], list(network.hosts())[-1]
     wildcard_mask = ipaddress.IPv4Address((~int(network.netmask)) & 0xFFFFFFFF)
-    reverse_dns = ".".join(reversed(ip_address.split("."))) + ".in-addr.arpa"
+    reverse_dns = reverse_dns_lookup(ip_address)
 
-    print(f"IP Address: {successful(ip_address)}")
-    print(f"Subnet Mask: {successful(network.netmask)}")
-    print(f"CIDR Notation: {successful(cidr)}")
-    print(f"Network Address: {successful(network.network_address)}")
-    print(f"Broadcast Address: {successful(network.broadcast_address)}")
-    print(f"Network Address with CIDR Notation: {successful(network)}")
-    print(f"Possible Number of Subnets: {successful(2 ** (ip_bits_total - int(cidr)))}")
-    print(f"Total Number of Hosts: {successful(total_hosts)}")
-    print(f"Number of Usable Hosts: {successful(usable_hosts)}")
-    print(f"IP class and private/public:{successful(ip_class_private_public(ip_address))}")
-    print(f"IP Class (based on total number of hosts): {successful(ip_class_by_hosts(ip_address, subnet_mask_or_cidr))}")
-    print(f"Binary Version of IP: {ip_to_binary(ip_address)}")
-    subnet_mask_str = str(ipaddress.IPv4Network(f'0.0.0.0/{cidr}', strict=False).netmask)
-    print(f"Binary Subnet Mask: {successful('.'.join([bin(int(octet))[2:].rjust(8, '0') for octet in subnet_mask_str.split('.')]))}")
-    print(f"Usable Host IP Range: {successful(f'{first_address} - {last_address}')}")
-    print(f"Integer ID:\t{successful(ip_int)}")
-    print(f"Hex ID:\t\t{successful(ip_hex)}")
-    print(f"in-addr.arpa:\t{successful(reverse_dns)}")
-    print(f"Wildcard Mask: {successful(wildcard_mask)}")
-    print(f"IPv4 Mapped Address: {successful(ipaddress.IPv6Address(f'::ffff:{ip_address}'))}")
-    print(successful(f"6to4 Prefix: 2002:{int(ip_address.split('.')[0]):02x}{int(ip_address.split('.')[1]):02x}:{int(ip_address.split('.')[2]):02x}{int(ip_address.split('.')[3]):02x}::/48"))
+    table_data = [
+        ["IP Address", ip_address],
+        ["Subnet Mask", str(network.netmask)],
+        ["CIDR Notation", str(cidr)],
+        ["Network Address", str(network.network_address)],
+        ["Broadcast Address", str(network.broadcast_address)],
+        ["Network Address with CIDR Notation", str(network)],
+        ["Possible Number of Subnets", str(2 ** (32 - int(cidr)))],
+        ["Total Number of Hosts", str(total_hosts)],
+        ["Number of Usable Hosts", str(usable_hosts)],
+        ["IP class and private/public", ip_class_private_public(ip_address)],
+        ["Binary Version of IP", ip_to_binary(ip_address)],
+        ["Binary Subnet Mask", str(network.netmask)],
+        ["Usable Host IP Range", f"{first_address} - {last_address}"],
+        ["Integer ID", str(ip_int)],
+        ["Hex ID", str(ip_hex)],
+        ["Reverse DNS Lookup", reverse_dns]
+    ]
+
+    print(tabulate(table_data, headers=["Category", "Value"], tablefmt="grid"))
+
+
+def subnetting_calculator(ip_range, num_subnets):
+    try:
+        network = ipaddress.IPv4Network(ip_range, strict=False)
+        subnets = list(network.subnets(new_prefix=num_subnets))
+        table_data = [["Subnet", "Network Address"]]
+        for subnet in subnets:
+            table_data.append([f"/{subnet.prefixlen}", str(subnet.network_address)])
+        print(tabulate(table_data, headers="firstrow", tablefmt="grid"))
+    except ipaddress.AddressValueError:
+        return error("Error: Invalid IP range or number of subnets")
+
+
+def reverse_dns_lookup(ip_address):
+    try:
+        domain_name = socket.gethostbyaddr(ip_address)[0]
+        return successful(domain_name)
+    except (socket.herror, socket.gaierror):
+        return error("Reverse DNS lookup failed")
+
+
+def identify_ip_address_type(ip_address):
+    try:
+        ip = ipaddress.ip_address(ip_address)
+        if ip.is_private:
+            return successful("Private IP Address")
+        elif ip.is_loopback:
+            return successful("Loopback IP Address")
+        elif ip.is_multicast:
+            return successful("Multicast IP Address")
+        else:
+            return successful("Public IP Address")
+    except ValueError:
+        return error("Invalid IP Address")
+
 
 def main_menu():
-    print("\nChoose an option:")
+    print("\n==== Modern IP Tool ====")
+    print("Choose an option:")
     print("1. Binary IP to Dotted Decimal Notation IP address")
     print("2. IP address to Binary")
     print("3. Find Network Address from IP and Subnet Mask")
@@ -178,7 +188,11 @@ def main_menu():
     print("5. Calculate Possible Subnetting from IP range")
     print("6. Determine IP Class and Private/Public Status")
     print("7. Display All Information for an IP Address and Subnet")
-    print("8. Exit\n")
+    print("8. Subnetting Calculator")
+    print("9. Reverse DNS Lookup")
+    print("10. Identify IP Address Type")
+    print("11. Exit")
+    print("========================")
 
 
 def run_tool():
@@ -220,11 +234,24 @@ def run_tool():
                     ip_address = input("Enter the IP address: ")
                     print(ip_class_private_public(ip_address))
                 elif choice == 7:
-                    # get a nice consolidated view on the IP address
+                    # get a nice consolidated view of the IP address
                     ip_address = input("Enter the IP address: ")
                     subnet_mask_or_cidr = input("Enter the subnet mask or CIDR notation: ")
                     display_all_info(ip_address, subnet_mask_or_cidr)
                 elif choice == 8:
+                    # subnetting calculator
+                    ip_range = input("Enter the IP range: ")
+                    num_subnets = int(input("Enter the number of subnets: "))
+                    subnetting_calculator(ip_range, num_subnets)
+                elif choice == 9:
+                    # reverse DNS lookup
+                    ip_address = input("Enter the IP address: ")
+                    print(reverse_dns_lookup(ip_address))
+                elif choice == 10:
+                    # identify IP address type
+                    ip_address = input("Enter the IP address: ")
+                    print(identify_ip_address_type(ip_address))
+                elif choice == 11:
                     # exit
                     sys.exit(successful('Exiting...'))
                 else:
@@ -233,6 +260,7 @@ def run_tool():
 
             except (KeyboardInterrupt, EOFError):
                 sys.exit(error("Exited"))
+
 
 if __name__ == "__main__":
     run_tool()
