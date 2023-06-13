@@ -1,89 +1,96 @@
-# IPv4 Tool for Beginner
+# Modern IP Tool
 
-IP Tool is a Python-based command-line utility for working with IP addresses. It provides various functionalities such as converting binary IP to decimal IP, determining IP class and private/public status, calculating possible subnets, and more.
+The Modern IP Tool is a command-line utility that provides various IP address-related functions and calculations. It offers features like converting between binary and decimal IP addresses, finding network addresses, subnetting calculations, reverse DNS lookup, and identifying IP address types. This tool is built using Python and leverages the `ipaddress` and `tabulate` libraries.
 
-This is a command-line tool that performs various operations on IPv4 addresses, including:
+![Features](https://github.com/saeed205/Modern-IP-Tool/blob/main/01.png)
 
--   Converting a binary IP address to a dotted decimal notation IP address
--   Converting an IP address to binary
--   Finding the network address from an IP address and subnet mask
--   Finding the network address from an IP/CIDR notation
--   Calculating possible subnetting from an IP range
--   Determining the IP class and private/public status
--   Displaying all information for an IP address and subnet
+## Features
+
+- Binary IP to Dotted Decimal Notation IP address conversion
+- IP address to binary conversion
+- Finding network addresses from IP and subnet mask
+- Finding network addresses from IP/CIDR notation
+- Calculating possible subnetting from an IP range
+- Determining IP class and private/public status
+- Displaying comprehensive information for an IP address and subnet
+- Subnetting calculator
+- Reverse DNS lookup
+- Identifying IP address types (public, private, loopback, multicast)
 
 ## Installation
 
-1. Clone this repository to your local machine.
-
-2. git clone https://github.com/Blindsinner/IPv4-tool-for-beginner.git
-
+1. Clone this repository or download the source code.
+2. Install the required dependencies by running `pip install -r requirements.txt`.
 
 ## Usage
 
-To use the command-line interface, navigate to the directory containing the `ip_tool.py` script and run: 
+To run the Modern IP Tool, execute the `main.py` script in the command-line interface.
 
-python ip_tool.py
-## Examples
+```shell
+python main.py
+```
 
-### Convert binary IP address to dotted decimal notation
+The tool will present a menu with numbered options. Enter the corresponding option number to perform the desired IP-related operation.
 
+### Examples
 
+1. Binary IP to Dotted Decimal Notation IP address:
+   - Input: `11000000101010000000000100000001`
+   - Output: `Decimal IP: 192.168.1.1`
 
-`Enter the binary IP address: 11000000.10101000.00000001.00000001
-Decimal IP: 192.168.1.1` 
+2. IP address to binary:
+   - Input: `192.168.1.1`
+   - Output: `Binary IP: 11000000101010000000000100000001`
 
-### Convert IP address to binary
+3. Find Network Address from IP and Subnet Mask:
+   - Input:
+     - IP address: `192.168.1.10`
+     - Subnet mask: `255.255.255.0`
+   - Output: `Network address with CIDR Notation: 192.168.1.0/24`
 
+4. Find Network Address from IP/CIDR notation:
+   - Input: `192.168.1.0/24`
+   - Output:
+     - Network address: `192.168.1.0`
+     - IP Subnet Mask: `255.255.255.0`
 
+5. Calculate Possible Subnetting from IP range:
+   - Input:
+     - IP network: `192.168.0.0`
+     - Subnet mask or CIDR: `16`
+   - Output: `Possible Number of Subnets: 256`
 
-`Enter the IP address: 192.168.1.1
-11000000.10101000.00000001.00000001` 
+6. Determine IP Class and Private/Public Status:
+   - Input: `192.168.1.10`
+   - Output: `According to first octet: Class C, Private`
 
-### Find network address from IP and subnet mask
-
-
-
-`Enter the IP address: 192.168.1.1
-Enter the subnet mask: 255.255.255.0
-Network address with CIDR Notation: 192.168.1.0/24` 
-
-### Find network address from IP/CIDR notation
-
-
-
-`Enter the IP address/CIDR: 192.168.1.1/24
-Network address: 192.168.1.0
-IP Subnet Mask: 255.255.255.0` 
-
-### Calculate possible subnetting from IP range
-
-
-
-`Enter the IP network: 192.168.1.0
-Enter the subnet mask or CIDR: 27
-Possible Number of Subnets: 32` 
-
-### Determine IP class and private/public status
-
-
-
-`Enter the IP address: 192.168.1.1
- According to first octet: Class C, Private` 
-
-### Display all information for an IP address and subnet
+7. Display All Information for an IP Address and Subnet:
+   - Input:
+     - IP address: `192.168.1.10`
+     - Subnet mask or CIDR notation: `24`
+   - Output: Displays a comprehensive table with information such as network address, broadcast address, total number of hosts, etc.
+   
+![Display All](https://github.com/saeed205/Modern-IP-Tool/blob/main/02.png)
 
 
-![Example of Display All Information](https://github.com/Blindsinner/IPv4-tool-for-beginner/blob/main/Screenshot_6.png)
+8. Subnetting Calculator:
+   - Input:
+     - IP range: `192.168.0.0/16`
+     - Number of subnets: `4`
+   - Output: Displays a table with subnet information, including network addresses for each subnet.
 
+9. Reverse DNS Lookup:
+   - Input: `8.8.8.8`
+   - Output: Reverse DNS lookup result for the given IP address.
 
-Follow the on-screen prompts to perform various IP-related tasks.
-With GIU: (https://github.com/Blindsinner/IP-Toolkit)
+10. Identify IP Address Type
+
+:
+    - Input: `192.168.1.10`
+    - Output: `Private IP Address`
+
+11. Exit: Exits the Modern IP Tool.
+
 ## Contributing
 
-If you would like to contribute to this project, please feel free to submit a pull request or open an issue on GitHub.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
+Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
